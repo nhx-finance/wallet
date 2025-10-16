@@ -1,1 +1,77 @@
 package app
+
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	hiero "github.com/hiero-ledger/hiero-sdk-go/v2/sdk"
+	"github.com/joho/godotenv"
+	"github.com/nhx-finance/wallet/internal/stores"
+	"github.com/nhx-finance/wallet/migrations"
+)
+
+type Application struct {
+	Logger *log.Logger
+	DB *sql.DB
+	HieroClient *hiero.Client
+}
+
+func loadEnvironmentVariables() error {
+	err := godotenv.Load()
+	
+	if err != nil {
+		fmt.Println("No .env file found (using environment variables from system)")
+		return err
+	} else {
+		fmt.Println("Environment variables loaded from .env file")
+		return nil
+	}
+}
+
+
+
+func NewApplication() (*Application, error) {
+	if err := loadEnvironmentVariables(); err != nil {
+		return nil, err
+	}
+	accountID, err := hiero.AccountIDFromString(os.Getenv("OPERATOR_ACCOUNT_ID"))
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := hiero.PrivateKeyFromStringEd25519(os.Getenv("OPERATOR_KEY"))
+	if err != nil {
+		panic(err)
+	}
+
+	client := hiero.ClientForTestnet()
+
+	client.SetOperator(accountID, privateKey)
+	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
+
+	pgDB, err := stores.Open()
+	if err != nil {
+		return nil, err
+	}
+	err = stores.MigrateFS(pgDB, migrations.FS, ".")
+	if err != nil {
+		panic(err)
+	}
+
+
+	app := &Application{
+		Logger: logger,
+		HieroClient: client,
+		DB: pgDB,
+	}
+
+	return app, nil
+}
+
+func (app *Application) HealthCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
