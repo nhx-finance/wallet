@@ -9,6 +9,7 @@ import (
 
 	hiero "github.com/hiero-ledger/hiero-sdk-go/v2/sdk"
 	"github.com/joho/godotenv"
+	"github.com/nhx-finance/wallet/internal/api"
 	"github.com/nhx-finance/wallet/internal/stores"
 	"github.com/nhx-finance/wallet/migrations"
 )
@@ -17,6 +18,7 @@ type Application struct {
 	Logger *log.Logger
 	DB *sql.DB
 	HieroClient *hiero.Client
+	TransactionHandler *api.TransactionHandler
 }
 
 func loadEnvironmentVariables() error {
@@ -61,11 +63,17 @@ func NewApplication() (*Application, error) {
 		panic(err)
 	}
 
+	// stores
+	transactionStore := stores.NewPostgresTransactionStore(pgDB)
+
+	// handlers
+	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger)
 
 	app := &Application{
 		Logger: logger,
 		HieroClient: client,
 		DB: pgDB,
+		TransactionHandler: transactionHandler,
 	}
 
 	return app, nil

@@ -9,6 +9,7 @@ func SetUpRoutes(app *app.Application) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Get("/health", app.HealthCheck)
+	r.Post("/onramp/initiate", app.TransactionHandler.HandleOnramp)
 
 	return r
 }
