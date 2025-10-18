@@ -10,6 +10,7 @@ func SetUpRoutes(app *app.Application) *chi.Mux {
 
 	r.Get("/health", app.HealthCheck)
 	r.Post("/onramp/initiate", app.TransactionHandler.HandleOnramp)
+	r.Get("/balance", app.StripeHandler.AccountBalance)
 
 	return r
 }
