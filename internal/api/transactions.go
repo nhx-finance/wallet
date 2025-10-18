@@ -16,6 +16,7 @@ type OnRampRequest struct {
 	Asset string `json:"asset"`
 	Quantity float64 `json:"quantity"`
 	ImageURL string `json:"image_url"`
+	AccountID string `json:"account_id"`
 }
 
 type TransactionHandler struct {
@@ -42,9 +43,25 @@ func (th *TransactionHandler) HandleCardOnramp(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	session, err := th.StripeHandler.CreateCheckoutSession(req.Email, req.Asset, req.Quantity, req.ImageURL)
+	session, err := th.StripeHandler.CreateCheckoutSession(req.Email, req.Asset, req.Quantity, req.ImageURL, req.AccountID)
 	if err != nil {
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create checkout session"})
+		return
+	}
+
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"session": session})
+}
+
+func (th *TransactionHandler) HandleConfirmCheckoutSession(w http.ResponseWriter, r *http.Request){
+	sessionID, err := utils.ReadParamID(r, "id")
+	if err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid session ID"})
+		return
+	}
+
+	session, err := th.StripeHandler.RetrieveCheckoutSession(sessionID)
+	if err != nil {
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to retrieve checkout session"})
 		return
 	}
 

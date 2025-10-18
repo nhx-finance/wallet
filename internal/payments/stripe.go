@@ -34,7 +34,7 @@ func (sh *StripeHandler) AccountBalance(w http.ResponseWriter, r *http.Request){
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"balance": balance})
 }
 
-func (sh *StripeHandler) CreateCheckoutSession(email string, asset string, quantity float64, imageURL string) (*stripe.CheckoutSession, error) {
+func (sh *StripeHandler) CreateCheckoutSession(email string, asset string, quantity float64, imageURL string, accountID string) (*stripe.CheckoutSession, error) {
 	price, err := utils.GetAssetPrice(asset)
 	if err != nil {
 		return nil, err
@@ -56,12 +56,27 @@ func (sh *StripeHandler) CreateCheckoutSession(email string, asset string, quant
 			},
 		},
 		Mode: stripe.String("payment"),
+		Metadata: map[string]string{
+			"account_id": accountID,
+		},
 		CancelURL: stripe.String(os.Getenv("CANCEL_URL")),
 	}
 
 	session, err := sh.StripeClient.V1CheckoutSessions.Create(context.Background(), params)
 	if err != nil {
 		log.Printf("failed to create checkout session: %v", err)
+		return nil, err
+	}
+
+	return session, nil
+}
+
+func (sh *StripeHandler) RetrieveCheckoutSession(sessionID string) (*stripe.CheckoutSession, error) {
+	params := &stripe.CheckoutSessionRetrieveParams{}
+
+	session, err := sh.StripeClient.V1CheckoutSessions.Retrieve(context.TODO(), sessionID, params)
+	if err != nil {
+		log.Printf("failed to retrieve checkout session: %v", err)
 		return nil, err
 	}
 
