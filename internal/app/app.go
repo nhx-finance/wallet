@@ -71,8 +71,8 @@ func NewApplication() (*Application, error) {
 	transactionStore := stores.NewPostgresTransactionStore(pgDB)
 
 	// handlers
-	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger)
 	stripeHandler := payments.NewStripeHandler(stripeClient)
+	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger, stripeHandler)
 	
 	app := &Application{
 		Logger: logger,
