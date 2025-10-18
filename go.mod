@@ -7,6 +7,7 @@ require github.com/hiero-ledger/hiero-sdk-go/v2 v2.72.0
 require (
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/sethvargo/go-retry v0.3.0 // indirect
+	github.com/stripe/stripe-go/v83 v83.0.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 )
 
