@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	hiero "github.com/hiero-ledger/hiero-sdk-go/v2/sdk"
@@ -104,22 +105,41 @@ func initiateSTKPush(req OnRampRequest) (*STKPushResponse, error) {
 	if businessShortCode == "" {
 		return nil, errors.New("BUSINESS_SHORT_CODE is not set")
 	}
-	password := os.Getenv("PASSWORD")
-	if password == "" {
-		return nil, errors.New("PASSWORD is not set")
+	consumerKey := os.Getenv("CONSUMER_KEY")
+	if consumerKey == "" {
+		return nil, errors.New("CONSUMER_KEY is not set")
 	}
+	consumerSecret := os.Getenv("CONSUMER_SECRET")
+	if consumerSecret == "" {
+		return nil, errors.New("CONSUMER_SECRET is not set")
+	}
+	passKey := os.Getenv("PASS_KEY")
+	if passKey == "" {
+		return nil, errors.New("PASS_KEY is not set")
+	}
+
+	businessShortCodeInt, err := strconv.ParseInt(businessShortCode, 10, 64)
+	if err != nil {
+		return nil, errors.New("BUSINESS_SHORT_CODE must be a valid integer")
+	}
+	phoneInt, err := strconv.ParseInt(req.Phone, 10, 64)
+	if err != nil {
+		return nil, errors.New("phone number must be a valid integer")
+	}
+
 	method := "POST"
-	timestamp := time.Now().Format("20251017202114")
+	timestamp := time.Now().Format("YYYYMMDDHHmmss")
+	password := base64.StdEncoding.EncodeToString([]byte(businessShortCode + passKey + timestamp))
 	payloadData := map[string]any{
-		"BusinessShortCode": businessShortCode,
+		"BusinessShortCode": businessShortCodeInt,
 		"Password": password,
 		"Timestamp": timestamp,
 		"TransactionType": "CustomerPayBillOnline",
-		"Amount": req.AmountKSH,
-		"PartyA": req.Phone,
-		"PartyB": businessShortCode,
-		"PhoneNumber": req.Phone,
-		"CallBackURL": os.Getenv("CALLBACK_URL"),
+		"Amount": int(req.AmountKSH),
+		"PartyA": phoneInt,
+		"PartyB": businessShortCodeInt,
+		"PhoneNumber": phoneInt,
+		"CallBackURL": "https://mydomain.com/path",
 		"AccountReference": "NHXWALLET",
 		"TransactionDesc": "USDC Purchase",
 	}
@@ -153,6 +173,7 @@ func initiateSTKPush(req OnRampRequest) (*STKPushResponse, error) {
 		return nil, err
 	}
 	log.Println("STK push response status code: ", res.StatusCode)
+	log.Println("STK push response: ", res.Body)
 	defer res.Body.Close()
 	
 	var stkResp STKPushResponse
