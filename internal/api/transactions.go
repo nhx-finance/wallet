@@ -128,7 +128,7 @@ func initiateSTKPush(req OnRampRequest) (*STKPushResponse, error) {
 	}
 
 	method := "POST"
-	timestamp := time.Now().Format("YYYYMMDDHHmmss")
+	timestamp := time.Now().Format("20060102150405")
 	password := base64.StdEncoding.EncodeToString([]byte(businessShortCode + passKey + timestamp))
 	payloadData := map[string]any{
 		"BusinessShortCode": businessShortCodeInt,
