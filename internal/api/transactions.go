@@ -12,82 +12,56 @@ import (
 	"time"
 
 	hiero "github.com/hiero-ledger/hiero-sdk-go/v2/sdk"
+	"github.com/nhx-finance/wallet/internal/payments"
 	"github.com/nhx-finance/wallet/internal/stores"
 	"github.com/nhx-finance/wallet/internal/utils"
 )
 
 type OnRampRequest struct {
-	AmountKSH float64 `json:"amount_ksh"`
-	Phone string `json:"phone"`
-	HederaAccountID string `json:"hedera_account_id"`
-}
-
-type STKPushResponse struct {
-	MerchantRequestID string `json:"MerchantRequestID"`
-	CheckoutRequestID string `json:"CheckoutRequestID"`
-	ResponseCode string `json:"ResponseCode"`
-	ResponseDescription string `json:"ResponseDescription"`
-	CustomerMessage string `json:"CustomerMessage"`
-}
-
-type AuthorizationResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn string `json:"expires_in"`
+	Email string `json:"email"`
+	Asset string `json:"asset"`
+	Quantity float64 `json:"quantity"`
+	ImageURL string `json:"image_url"`
+	AccountID string `json:"account_id"`
 }
 
 type TransactionHandler struct {
 	TransactionStore stores.TransactionStore
+	StripeHandler *payments.StripeHandler
 	HieroClient *hiero.Client
 	Logger *log.Logger
 }
 
-func NewTransactionHandler (transactionStore stores.TransactionStore, hieroClient *hiero.Client, logger *log.Logger) *TransactionHandler {
+func NewTransactionHandler (transactionStore stores.TransactionStore, hieroClient *hiero.Client, logger *log.Logger, stripeHandler *payments.StripeHandler) *TransactionHandler {
 	return &TransactionHandler{
 		TransactionStore: transactionStore,
 		HieroClient: hieroClient,
 		Logger: logger,
+		StripeHandler: stripeHandler,
 	}
 }
 
-func (th *TransactionHandler) HandleOnramp(w http.ResponseWriter, r *http.Request){
+func (th *TransactionHandler) HandleCardOnramp(w http.ResponseWriter, r *http.Request){
 	var req OnRampRequest
-
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		th.Logger.Println("failed to decode onramp request", err)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "failed to decode onramp request"})
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid request body"})
 		return
 	}
 
-	exchangeRate, err := utils.GetUSDCKSHExchangeRate()
+	session, err := th.StripeHandler.CreateCheckoutSession(req.Email, req.Asset, req.Quantity, req.ImageURL, req.AccountID)
 	if err != nil {
-		th.Logger.Println("failed to get exchange rate", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to get exchange rate"})
+		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create checkout session"})
 		return
 	}
 
-	amountUSDC := req.AmountKSH / exchangeRate
-	if req.AmountKSH < 1 {
-		th.Logger.Printf("amount KSH is too small, amountKSH: %f", req.AmountKSH)
-		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "amount is too small, minimum amount is 1 KSH"})
-		return
-	}
-	
-	tx := stores.Transaction{
-		Phone: req.Phone,
-		HederaAccountID: req.HederaAccountID,
-		Type: "onramp",
-		AmountKSH: req.AmountKSH,
-		AmountUSDC: amountUSDC,
-		ExchangeRate: exchangeRate,
-		Status: "pending",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-	stkPushResp, err := initiateSTKPush(req)
+	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"session": session})
+}
+
+func (th *TransactionHandler) HandleConfirmCheckoutSession(w http.ResponseWriter, r *http.Request){
+	sessionID, err := utils.ReadParamID(r, "id")
 	if err != nil {
-		th.Logger.Println("failed to initiate STK push", err)
-		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to initiate STK push"})
+		utils.WriteJSON(w, http.StatusBadRequest, utils.Envelope{"error": "invalid session ID"})
 		return
 	}
 
