@@ -10,10 +10,8 @@ import (
 	hiero "github.com/hiero-ledger/hiero-sdk-go/v2/sdk"
 	"github.com/joho/godotenv"
 	"github.com/nhx-finance/wallet/internal/api"
-	"github.com/nhx-finance/wallet/internal/payments"
 	"github.com/nhx-finance/wallet/internal/stores"
 	"github.com/nhx-finance/wallet/migrations"
-	"github.com/stripe/stripe-go/v83"
 )
 
 type Application struct {
@@ -21,7 +19,6 @@ type Application struct {
 	DB *sql.DB
 	HieroClient *hiero.Client
 	TransactionHandler *api.TransactionHandler
-	StripeHandler *payments.StripeHandler
 }
 
 func loadEnvironmentVariables() error {
@@ -55,7 +52,6 @@ func NewApplication() (*Application, error) {
 	client := hiero.ClientForTestnet()
 
 	client.SetOperator(accountID, privateKey)
-	stripeClient := stripe.NewClient(os.Getenv("STRIPE_SECRET"))
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile)
 
 	pgDB, err := stores.Open()
@@ -71,15 +67,13 @@ func NewApplication() (*Application, error) {
 	transactionStore := stores.NewPostgresTransactionStore(pgDB)
 
 	// handlers
-	stripeHandler := payments.NewStripeHandler(stripeClient)
-	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger, stripeHandler)
+	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger)
 	
 	app := &Application{
 		Logger: logger,
 		HieroClient: client,
 		DB: pgDB,
 		TransactionHandler: transactionHandler,
-		StripeHandler: stripeHandler,
 	}
 
 	return app, nil

@@ -9,9 +9,7 @@ func SetUpRoutes(app *app.Application) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Get("/health", app.HealthCheck)
-	r.Post("/onramp/initiate", app.TransactionHandler.HandleCardOnramp)
-	r.Get("/balance", app.StripeHandler.AccountBalance)
-	r.Get("/onramp/confirm/{id}", app.TransactionHandler.HandleConfirmCheckoutSession)
+	r.Post("/onramp/initiate", app.TransactionHandler.HandleInitiatePayment)
 
 	return r
 }
