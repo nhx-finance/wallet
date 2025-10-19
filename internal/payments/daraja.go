@@ -47,6 +47,10 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 	if passKey == "" {
 		return nil, errors.New("PASS_KEY is not set")
 	}
+	callbackURL := os.Getenv("CALLBACK_URL")
+	if callbackURL == "" {
+		return nil, errors.New("CALLBACK_URL is not set")
+	}
 
 	businessShortCodeInt, err := strconv.ParseInt(businessShortCode, 10, 64)
 	if err != nil {
@@ -69,7 +73,7 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 		"PartyA": phoneInt,
 		"PartyB": businessShortCodeInt,
 		"PhoneNumber": phoneInt,
-		"CallBackURL": "https://mydomain.com/path",
+		"CallBackURL": callbackURL,
 		"AccountReference": "NHXWALLET",
 		"TransactionDesc": "USDC Purchase",
 	}
