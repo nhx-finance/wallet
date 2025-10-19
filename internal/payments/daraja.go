@@ -114,7 +114,6 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 	}
 	
 	log.Println("STK push response status code: ", res.StatusCode)
-	log.Println("STK push response body: ", string(bodyBytes))
 	
 	var stkResp STKPushResponse
 	if err := json.Unmarshal(bodyBytes, &stkResp); err != nil {

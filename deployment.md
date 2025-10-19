@@ -25,3 +25,9 @@ sudo docker compose -f docker-compose.prod.yml up -d --build
 ```bash
 sudo docker compose -f docker-compose.prod.yml down
 ```
+
+## 4. Postgres
+
+```bash
+sudo docker exec -it nhx-wallet-prod-db psql -U postgres -d postgres
+```

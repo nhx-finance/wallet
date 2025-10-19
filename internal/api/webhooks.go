@@ -80,5 +80,6 @@ func (wh *WebhookHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	// TODO: Initiate Hedera transaction on another goroutine
+
 	utils.WriteJSON(w, http.StatusOK, utils.Envelope{"transaction": txn})
 }
