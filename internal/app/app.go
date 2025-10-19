@@ -22,24 +22,20 @@ type Application struct {
 	WebhookHandler *api.WebhookHandler
 }
 
-func loadEnvironmentVariables() error {
+func loadEnvironmentVariables() {
 	err := godotenv.Load()
-	
+
 	if err != nil {
 		fmt.Println("No .env file found (using environment variables from system)")
-		return err
 	} else {
 		fmt.Println("Environment variables loaded from .env file")
-		return nil
 	}
 }
 
 
 
 func NewApplication() (*Application, error) {
-	if err := loadEnvironmentVariables(); err != nil {
-		return nil, err
-	}
+	loadEnvironmentVariables()
 	accountID, err := hiero.AccountIDFromString(os.Getenv("OPERATOR_ACCOUNT_ID"))
 	if err != nil {
 		panic(err)
