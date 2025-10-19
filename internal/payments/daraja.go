@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -104,12 +105,19 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 		log.Println("failed to do HTTP request", err)
 		return nil, err
 	}
-	log.Println("STK push response: ", res.Body)
-	log.Println("STK push response status code: ", res.StatusCode)
 	defer res.Body.Close()
 	
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		log.Println("failed to read response body", err)
+		return nil, err
+	}
+	
+	log.Println("STK push response status code: ", res.StatusCode)
+	log.Println("STK push response body: ", string(bodyBytes))
+	
 	var stkResp STKPushResponse
-	if err := json.NewDecoder(res.Body).Decode(&stkResp); err != nil {
+	if err := json.Unmarshal(bodyBytes, &stkResp); err != nil {
 		log.Println("failed to decode STK push response", err)
 		return nil, err
 	}

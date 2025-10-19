@@ -17,7 +17,7 @@ sudo docker compose -f docker-compose.prod.yml logs --tail=10 backend
 ```bash
 git pull
 sudo docker compose -f docker-compose.prod.yml down
-sudo docker compose -f docker-compose.prod.yml up -d
+sudo docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ## 3. Stop Containers
