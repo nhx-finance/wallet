@@ -73,8 +73,6 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 		"AccountReference": "NHXWALLET",
 		"TransactionDesc": "USDC Purchase",
 	}
-
-	log.Println("payload data: ", payloadData)
 	
 	payloadBytes, err := json.Marshal(payloadData)
 	if err != nil {
@@ -103,7 +101,6 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 		return nil, err
 	}
 	log.Println("STK push response status code: ", res.StatusCode)
-	log.Println("STK push response: ", res.Body)
 	defer res.Body.Close()
 	
 	var stkResp STKPushResponse

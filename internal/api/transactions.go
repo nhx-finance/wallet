@@ -65,6 +65,7 @@ func (th *TransactionHandler) HandleInitiatePayment(w http.ResponseWriter, r *ht
 	createdTx, err := th.TransactionStore.CreateTransaction(tx)
 	if err != nil {
 		utils.WriteJSON(w, http.StatusInternalServerError, utils.Envelope{"error": "failed to create transaction"})
+		th.Logger.Printf("failed to create transaction: %v", err)
 		return
 	}
 

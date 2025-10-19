@@ -19,6 +19,7 @@ type Application struct {
 	DB *sql.DB
 	HieroClient *hiero.Client
 	TransactionHandler *api.TransactionHandler
+	WebhookHandler *api.WebhookHandler
 }
 
 func loadEnvironmentVariables() error {
@@ -65,15 +66,18 @@ func NewApplication() (*Application, error) {
 
 	// stores
 	transactionStore := stores.NewPostgresTransactionStore(pgDB)
+	webhookStore := stores.NewPostgresWebhookStore(pgDB)
 
 	// handlers
 	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger)
-	
+	webhookHandler := api.NewWebhookHandler(webhookStore, logger)
+
 	app := &Application{
 		Logger: logger,
 		HieroClient: client,
 		DB: pgDB,
 		TransactionHandler: transactionHandler,
+		WebhookHandler: webhookHandler,
 	}
 
 	return app, nil
