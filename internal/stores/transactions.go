@@ -31,7 +31,8 @@ func NewPostgresTransactionStore(db *sql.DB) *PostgresTransactionStore {
 
 type TransactionStore interface {
 	CreateTransaction(tx Transaction) (*Transaction, error)
-	
+	GetTransactionByMpesaCheckoutID(mpesaCheckoutID string) (*Transaction, error)
+	UpdateTransactionByMpesaCheckoutID(mpesaCheckoutID string, status string, mpesaReceiptNumber string) (*Transaction, error)
 }
 
 func (pt *PostgresTransactionStore) CreateTransaction(tx Transaction) (*Transaction, error) {
@@ -54,4 +55,61 @@ func (pt *PostgresTransactionStore) CreateTransaction(tx Transaction) (*Transact
 	}
 
 	return &tx, nil
+}
+
+func (pt *PostgresTransactionStore) UpdateTransactionByMpesaCheckoutID(mpesaCheckoutID string, status string, mpesaReceiptNumber string) (*Transaction, error) {
+	transaction := &Transaction{}
+	tx, err := pt.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback()
+
+	query := `
+	
+	UPDATE transactions
+	SET status = $1, mpesa_receipt_number = $2
+	WHERE mpesa_checkout_id = $3
+	RETURNING id, phone, hedera_account_id, type, amount_ksh, amount_usdc, exchange_rate, status, 
+	COALESCE(mpesa_checkout_id, '') as mpesa_checkout_id, 
+	COALESCE(mpesa_receipt_number, '') as mpesa_receipt_number, 
+	COALESCE(hedera_tx_id, '') as hedera_tx_id, 
+	created_at, updated_at
+	`
+
+	err = tx.QueryRow(query, status, mpesaReceiptNumber, mpesaCheckoutID).
+	Scan(&transaction.ID, &transaction.Phone, &transaction.HederaAccountID, &transaction.Type, &transaction.AmountKSH, &transaction.AmountUSDC, &transaction.ExchangeRate, &transaction.Status, &transaction.MpesaCheckoutID, &transaction.MpesaReceiptNumber, &transaction.HederaTxID, &transaction.CreatedAt, &transaction.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return transaction, nil
+}
+
+func (pt *PostgresTransactionStore) GetTransactionByMpesaCheckoutID(mpesaCheckoutID string) (*Transaction, error) {
+	transaction := &Transaction{}
+	query := `
+	
+	SELECT id, phone, hedera_account_id, type, amount_ksh, amount_usdc, exchange_rate, status, 
+	COALESCE(mpesa_checkout_id, '') as mpesa_checkout_id, 
+	COALESCE(mpesa_receipt_number, '') as mpesa_receipt_number, 
+	COALESCE(hedera_tx_id, '') as hedera_tx_id, 
+	created_at, updated_at
+	FROM transactions
+	WHERE mpesa_checkout_id = $1
+	`
+
+	err := pt.db.QueryRow(query, mpesaCheckoutID).
+	Scan(&transaction.ID, &transaction.Phone, &transaction.HederaAccountID, &transaction.Type, &transaction.AmountKSH, &transaction.AmountUSDC, &transaction.ExchangeRate, &transaction.Status, &transaction.MpesaCheckoutID, &transaction.MpesaReceiptNumber, &transaction.HederaTxID, &transaction.CreatedAt, &transaction.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return transaction, nil
 }

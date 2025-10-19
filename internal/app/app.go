@@ -70,7 +70,7 @@ func NewApplication() (*Application, error) {
 
 	// handlers
 	transactionHandler := api.NewTransactionHandler(transactionStore, client, logger)
-	webhookHandler := api.NewWebhookHandler(webhookStore, logger)
+	webhookHandler := api.NewWebhookHandler(webhookStore, transactionStore, logger)
 
 	app := &Application{
 		Logger: logger,

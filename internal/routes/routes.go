@@ -10,6 +10,7 @@ func SetUpRoutes(app *app.Application) *chi.Mux {
 
 	r.Get("/health", app.HealthCheck)
 	r.Post("/onramp/initiate", app.TransactionHandler.HandleInitiatePayment)
+	r.Post("/webhooks/mpesa", app.WebhookHandler.HandleWebhook)
 
 	return r
 }
