@@ -3,7 +3,7 @@
 ## 1. Build and start containers
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d --build
+sudo docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ## 2. View Logs
@@ -23,5 +23,5 @@ sudo docker compose -f docker-compose.prod.yml up -d
 ## 3. Stop Containers
 
 ```bash
-docker-compose -f docker-compose.prod.yml down
+sudo docker compose -f docker-compose.prod.yml down
 ```

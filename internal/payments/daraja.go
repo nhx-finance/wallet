@@ -104,7 +104,7 @@ func InitiateSTKPush(phone string, amountKSH float64, hederaAccountID string) (*
 		log.Println("failed to do HTTP request", err)
 		return nil, err
 	}
-	log.Println("STK push response: ", res)
+	log.Println("STK push response: ", res.Body)
 	log.Println("STK push response status code: ", res.StatusCode)
 	defer res.Body.Close()
 	
